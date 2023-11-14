@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/cubeicon.jpg" type="image/png">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            background: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwallpaperaccess.com%2Ffull%2F1430649.jpg&f=1&nofb=1&ipt=3d2aaf5a3485f65193021fb124a81faf68c123c6bfee9b09440d0032de42f6de&ipo=images') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gameContainer {
+            position: absolute;
+            width: 400px;
+            height: 600px;
+            overflow: hidden;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #startScreen {
+            position: absolute;
+            text-align: center;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1, p {
+            color: white;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: white;
+            color: black;
+        }
+
+        @media (max-width: 600px) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+            }
+        }
+    </style>
+    <title>Cube Slide</title>
+</head>
+
+<body>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="startScreen">
+            <h1>Cube Slide</h1>
+            <p>Press the button to play</p>
+            <button id="startButton">START LEVEL 2</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const startScreen = document.getElementById("startScreen");
+        const startButton = document.getElementById("startButton");
+
+        const playerSize = 36;
+        const cubeSize = 36;
+        let playerX = canvas.width / 2 - playerSize / 2;
+        let playerY = canvas.height - 2 * playerSize;
+        let cubes = [];
+        let score = 0;
+        let playerSpeed = 34;
+        let gameStarted = false;
+
+        function drawPlayer() {
+            ctx.beginPath();
+            ctx.rect(playerX, playerY, playerSize, playerSize);
+            ctx.fillStyle = "blue";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawCube(cube) {
+            ctx.beginPath();
+            ctx.rect(cube.x, cube.y, cubeSize, cubeSize);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+
+            
+            ctx.beginPath();
+            ctx.arc(cube.x + cubeSize / 2, cube.y + cubeSize / 2, cubeSize / 2 - 5, 0, Math.PI * 2);
+            ctx.fillStyle = "yellow";
+            ctx.fill();
+            ctx.closePath();
+
+            
+            const eyeRadius = 5;
+            ctx.beginPath();
+            ctx.arc(cube.x + cubeSize / 3, cube.y + cubeSize / 3, eyeRadius, 0, Math.PI * 2);
+            ctx.arc(cube.x + 2 * cubeSize / 3, cube.y + cubeSize / 3, eyeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "black";
+            ctx.fill();
+            ctx.closePath();
+
+            
+            ctx.beginPath();
+            ctx.arc(cube.x + cubeSize / 2, cube.y + 2 * cubeSize / 3, cubeSize / 4, 0, Math.PI, false);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawScore() {
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, canvas.width - 100, 30);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameStarted) {
+                drawPlayer();
+                drawScore();
+
+                for (let i = 0; i < cubes.length; i++) {
+                    drawCube(cubes[i]);
+                    cubes[i].y += cubes[i].speed;
+
+                    if (
+                        playerX < cubes[i].x + cubeSize &&
+                        playerX + playerSize > cubes[i].x &&
+                        playerY < cubes[i].y + cubeSize &&
+                        playerY + playerSize > cubes[i].y
+                    ) {
+                        alert("Game Over! Your score is: " + score);
+                        resetGame();
+                    }
+
+                    if (cubes[i].y > canvas.height) {
+                        cubes.splice(i, 1);
+                        i--;
+                        score++;
+                    }
+                }
+
+                requestAnimationFrame(draw);
+            } else {
+                drawStartScreen();
+            }
+        }
+
+        function startGame() {
+            startScreen.style.display = "none";
+            gameStarted = true;
+            requestAnimationFrame(draw);
+        }
+
+        function keyDownHandler(e) {
+            if (!gameStarted && (e.code === "Space" || e.code === "Spacebar")) {
+                startGame();
+            } else if (gameStarted) {
+                if (e.key === "Right" || e.key === "ArrowRight") {
+                    playerX += playerSpeed;
+                    if (playerX + playerSize > canvas.width) {
+                        playerX = canvas.width - playerSize;
+                    }
+                } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                    playerX -= playerSpeed;
+                    if (playerX < 0) {
+                        playerX = 0;
+                    }
+                }
+            }
+        }
+
+        function resetGame() {
+            gameStarted = false;
+            startScreen.style.display = "flex";
+            playerX = canvas.width / 2 - playerSize / 2;
+            playerY = canvas.height - 2 * playerSize;
+            cubes = [];
+            score = 0;
+        }
+
+        function createCube() {
+            const cube = {
+                x: Math.random() * (canvas.width - cubeSize),
+                y: 0,
+                speed: Math.random() * 15 + 10, 
+            };
+            cubes.push(cube);
+        }
+
+        document.addEventListener("keydown", keyDownHandler);
+        startButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            startGame();
+        });
+
+        setInterval(createCube, 1000);
+
+    </script>
+
+</body>
+
+</html>
